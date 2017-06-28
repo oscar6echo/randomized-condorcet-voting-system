@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Graph</title>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
+    <style type="text/css">
+        .link {
+            stroke: #121212;
+            stroke-width: 1.5px;
+            pointer-events: none;
+        }
+
+        .node {
+            cursor: move;
+            /*fill: #ccc;*/
+            stroke: #121212;
+            stroke-width: 1.5px;
+        }
+
+        .nodewinner {
+            fill: transparent;
+            stroke: red;
+            stroke-width: 2.5px;
+            pointer-events: none;
+        }
+
+        .nodecondorcetwinner {
+            fill: transparent;
+            stroke: red;
+            stroke-width: 2.5px;
+            pointer-events: none;
+        }
+
+        .nodelabel {
+            stroke: black;
+            text-anchor: middle;
+        }
+
+        .probalabel {
+            stroke: red;
+            text-anchor: middle;
+        }
+
+        .linkpath {
+            fill-opacity: 0;
+            stroke-opacity: 0;
+            fill: blue;
+            stroke: red;
+            pointer-events: none;
+        }
+
+        .linklabel {
+            fill: __labelColor__;
+            font-size: 10;
+            pointer-events: none;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="graphdiv">
+    </div>
+
+    <script type="text/javascript">
+        var dataset = JSON.parse('__json_data__')
+
+        var width = __width__;
+        var height = __height__;
+        var forceLayoutLinkDistance = __linkDistance__;
+
+        var nodeColors = d3.scale.category10();
+        var linkColor = __linkColor__;
+
+        var forceLayoutCharge = __Charge__;
+        var forceLayoutTheta = __Theta__;
+        var forceLayoutGravity = __Gravity__;
+        var forceLayoutNodeRadius = 25;
+
+
+        var tick = function () {
+
+            link.attr({
+                "x1": function (d) { return d.source.x; },
+                "y1": function (d) { return d.source.y; },
+                "x2": function (d) { return d.target.x; },
+                "y2": function (d) { return d.target.y; }
+            });
+
+            node.attr({
+                "cx": function (d) { return d.x; },
+                "cy": function (d) { return d.y; }
+            });
+
+            nodewinner.attr({
+                "cx": function (d) { return d.x; },
+                "cy": function (d) { return d.y; }
+            });
+
+            nodecondorcetwinner.attr({
+                "cx": function (d) { return d.x; },
+                "cy": function (d) { return d.y; }
+            });
+
+            nodelabel.attr({
+                "x": function (d) { return d.x; },
+                "y": function (d) { return d.y; }
+            });
+
+            probalabel.attr({
+                "x": function (d) { return d.x; },
+                "y": function (d) { return d.y; }
+            });
+
+            linkpath.attr('d', function (d) {
+                var path = 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
+                return path;
+            });
+
+            linklabel.attr('transform', function (d, i) {
+                if (d.target.x < d.source.x) {
+                    bbox = this.getBBox();
+                    rx = bbox.x + bbox.width / 2;
+                    ry = bbox.y + bbox.height / 2;
+                    return 'rotate(180 ' + rx + ' ' + ry + ')';
+                }
+                else {
+                    return 'rotate(0)';
+                }
+            });
+
+
+        };
+
+        var dragstart = function (d) {
+            d3.select(this).classed("fixed", d.fixed = true);
+        }
+
+        var dblclick = function (d) {
+            d3.select(this).classed("fixed", d.fixed = false);
+        }
+
+
+        var svg = d3.select("#graphdiv").append("svg")
+            .attr({ "width": width, "height": height });
+
+        var force = d3.layout.force()
+            .size([width, height])
+            .charge(forceLayoutCharge)
+            .linkDistance(forceLayoutLinkDistance)
+            .theta(forceLayoutTheta)
+            .gravity(forceLayoutGravity)
+            .on("tick", tick);
+
+        var drag = force.drag()
+            .on("dragstart", dragstart);
+
+        var node = svg.selectAll(".node"),
+            nodewinner = svg.selectAll(".nodewinner"),
+            nodecondorcetwinner = svg.selectAll(".nodecondorcetwinner"),
+            nodelabel = svg.selectAll("nodelabel"),
+            probalabel = svg.selectAll("probalabel"),
+            link = svg.selectAll(".link"),
+            linkpath = svg.selectAll(".linkpath"),
+            linklabel = svg.selectAll(".linklabel");
+
+        svg.append('defs').append('marker')
+            .attr({
+                'id': 'arrowhead',
+                'viewBox': '-0 -5 10 10',
+                'refX': 28,
+                'refY': 0,
+                'orient': 'auto',
+                'markerWidth': 10,
+                'markerHeight': 10,
+                'xoverflow': 'visible'
+            })
+            .append('svg:path')
+            .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
+            .attr('fill', linkColor)
+            .attr('stroke', linkColor);
+
+
+
+
+        var data = dataset;
+        window.data = data;
+        var nodesWinner = data.nodes.filter(function(d) { return d.proba; })
+        var nodeCondorcetWinner = data.nodes.filter(function(d) { return d.proba == '1/1'; })
+
+        console.log(data);
+
+        force
+            .nodes(data.nodes)
+            .links(data.links)
+            .start();
+
+        link = link.data(data.links)
+            .enter()
+            .append("line")
+            .attr("class", "link")
+            // .attr("id", function (d, i) { return 'link' + i })
+            .attr('marker-end', 'url(#arrowhead)');
+
+
+        node = node.data(data.nodes)
+            .enter()
+            .append("circle")
+            .attr("class", "node")
+            .attr("r", forceLayoutNodeRadius)
+            .style("fill", function (d, i) { return nodeColors(i); })
+            .on("dblclick", dblclick)
+            .call(drag);
+
+        nodewinner = nodewinner.data(nodesWinner)
+            .enter()
+            .append("circle")
+            .attr("class", "nodewinner")
+            .attr("r", forceLayoutNodeRadius + 5);
+
+        nodecondorcetwinner = nodecondorcetwinner.data(nodeCondorcetWinner)
+            .enter()
+            .append("circle")
+            .attr("class", "nodecondorcetwinner")
+            .attr("r", forceLayoutNodeRadius + 5 + 5);
+
+        nodelabel = nodelabel.data(data.nodes)
+            .enter()
+            .append("text")
+            .attr("class", "nodelabel")
+            .attr({
+                "x": function (d) { return d.x; },
+                "y": function (d) { return d.y; },
+                "dx": "0em",
+                "dy": "0.25em",
+
+            })
+            .text(function (d) { return d.name; });
+
+        probalabel = probalabel.data(data.nodes)
+            .enter()
+            .append("text")
+            .attr("class", "probalabel")
+            .attr({
+                "x": function (d) { return d.x; },
+                "y": function (d) { return d.y; },
+                "dx": "4em",
+                "dy": "0.25em",
+            })
+            .text(function (d) { return d.proba; });
+
+        linkpath = linkpath.data(data.links)
+            .enter()
+            .append('path')
+            .attr('class', 'linkpath')
+            .attr('id', function (d, i) { return 'linkpath' + i })
+            .attr('d', function (d) { return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y });
+
+
+        linklabel = linklabel.data(data.links)
+            .enter()
+            .append('text')
+            .attr('class', 'linklabel')
+            // .attr("id", function (d, i) { return 'linklabel' + i })
+            .attr('dy', -5);
+
+        linklabel
+            .append('textPath')
+            .attr('startOffset', '50%')
+            .attr('xlink:href', function (d, i) { return '#linkpath' + i })
+            .text(function (d, i) { return d.label });
+    </script>
+
+</body>
+
+</html>

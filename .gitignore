@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+.ipynb_checkpoints/
+*.py[cod]
+
+graph/graph.html
+
+saved/
+RCVS*.ipynb
+
