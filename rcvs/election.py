@@ -159,6 +159,15 @@ class Election:
         self.payoffs = payoffs
         self.df_payoffs = df_payoffs
 
+        if np.abs(payoffs + np.eye(self.nb_candidate)).min() == 0:
+            print('#'*60)
+            print('WARNING: The payoff matrix has zero non-diagonal values.')
+            print('Meaning the graph is not complete.')
+            print('Consequently the best lottery is not necessarily unique.')
+            print('And function "get_best_lottery" may raise an exception')
+            print('if the direct/dual solutions are not the same (safety check)')
+            print('#'*60, '\n\n')
+
     def get_best_lottery(self):
         """
         Determine best solution to problem
