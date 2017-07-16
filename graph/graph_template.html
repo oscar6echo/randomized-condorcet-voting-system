@@ -44,7 +44,7 @@
             text-anchor: middle;
         }
 
-        .linkpath {
+        .linkpath__$tag$__ {
             fill-opacity: 0;
             stroke-opacity: 0;
             fill: blue;
@@ -52,8 +52,8 @@
             pointer-events: none;
         }
 
-        .linklabel {
-            fill: __labelColor__;
+        .linklabel__$tag$__ {
+            fill: __$labelColor$__;
             font-size: 10;
             pointer-events: none;
             text-anchor: middle;
@@ -62,24 +62,23 @@
 </head>
 
 <body>
-    <div id="graphdiv">
+    <div id="graphdiv__$tag$__">
     </div>
 
     <script type="text/javascript">
-        var dataset = JSON.parse('__json_data__')
+        var dataset = JSON.parse('__$json_data$__')
 
-        var width = __width__;
-        var height = __height__;
-        var forceLayoutLinkDistance = __linkDistance__;
+        var width = __$width$__;
+        var height = __$height$__;
+        var forceLayoutLinkDistance = __$linkDistance$__;
 
         var nodeColors = d3.scale.category10();
-        var linkColor = __linkColor__;
+        var linkColor = __$linkColor$__;
 
-        var forceLayoutCharge = __Charge__;
-        var forceLayoutTheta = __Theta__;
-        var forceLayoutGravity = __Gravity__;
+        var forceLayoutCharge = __$Charge$__;
+        var forceLayoutTheta = __$Theta$__;
+        var forceLayoutGravity = __$Gravity$__;
         var forceLayoutNodeRadius = 25;
-
 
         var tick = function () {
 
@@ -115,24 +114,22 @@
                 "y": function (d) { return d.y; }
             });
 
-            linkpath.attr('d', function (d) {
+            linkpath__$tag$__.attr('d', function (d) {
                 var path = 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y;
                 return path;
             });
 
-            linklabel.attr('transform', function (d, i) {
+            linklabel__$tag$__.attr('transform', function (d, i) {
                 if (d.target.x < d.source.x) {
-                    bbox = this.getBBox();
-                    rx = bbox.x + bbox.width / 2;
-                    ry = bbox.y + bbox.height / 2;
+                    let bbox = this.getBBox();
+                    let rx = bbox.x + bbox.width / 2;
+                    let ry = bbox.y + bbox.height / 2;
                     return 'rotate(180 ' + rx + ' ' + ry + ')';
                 }
                 else {
                     return 'rotate(0)';
                 }
             });
-
-
         };
 
         var dragstart = function (d) {
@@ -144,7 +141,7 @@
         }
 
 
-        var svg = d3.select("#graphdiv").append("svg")
+        var svg = d3.select("#graphdiv__$tag$__").append("svg")
             .attr({ "width": width, "height": height });
 
         var force = d3.layout.force()
@@ -164,8 +161,11 @@
             nodelabel = svg.selectAll("nodelabel"),
             probalabel = svg.selectAll("probalabel"),
             link = svg.selectAll(".link"),
-            linkpath = svg.selectAll(".linkpath"),
-            linklabel = svg.selectAll(".linklabel");
+            linkpath__$tag$__ = svg.selectAll(".linkpath__$tag$__"),
+            linklabel__$tag$__ = svg.selectAll(".linklabel__$tag$__");
+        console.log('linklabel');
+        window.ll = linklabel__$tag$__;
+        console.log(linklabel__$tag$__.length);
 
         svg.append('defs').append('marker')
             .attr({
@@ -252,26 +252,30 @@
             })
             .text(function (d) { return d.proba; });
 
-        linkpath = linkpath.data(data.links)
+
+        linkpath__$tag$__ = linkpath__$tag$__.data(data.links)
             .enter()
             .append('path')
-            .attr('class', 'linkpath')
-            .attr('id', function (d, i) { return 'linkpath' + i })
+            .attr('class', 'linkpath__$tag$__')
+            .attr('id', function (d, i) { return 'linkpath__$tag$__' + i })
             .attr('d', function (d) { return 'M ' + d.source.x + ' ' + d.source.y + ' L ' + d.target.x + ' ' + d.target.y });
 
 
-        linklabel = linklabel.data(data.links)
+        linklabel__$tag$__ = linklabel__$tag$__.data(data.links)
             .enter()
             .append('text')
-            .attr('class', 'linklabel')
-            // .attr("id", function (d, i) { return 'linklabel' + i })
+            .attr('class', 'linklabel__$tag$__')
+            // .attr("id", function (d, i) { return 'linklabel__$tag$__' + i })
             .attr('dy', -5);
 
-        linklabel
+        linklabel__$tag$__
             .append('textPath')
             .attr('startOffset', '50%')
-            .attr('xlink:href', function (d, i) { return '#linkpath' + i })
+            .attr('xlink:href', function (d, i) { return '#linkpath__$tag$__' + i })
             .text(function (d, i) { return d.label });
+
+
+
     </script>
 
 </body>
