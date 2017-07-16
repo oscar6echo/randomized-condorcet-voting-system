@@ -277,8 +277,8 @@ class Election:
             'width': width,
             'height': height,
             'linkDistance': linkDistance,
-            'linkColor': '"{}"'.format(linkColor),
-            'labelColor': '{}'.format(labelColor),
+            'linkColor': linkColor,
+            'labelColor': labelColor,
             'Charge': charge,
             'Theta': theta,
             'Gravity': gravity
