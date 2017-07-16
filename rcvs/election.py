@@ -5,10 +5,13 @@ import json
 import numpy as np
 import pandas as pd
 
+from IPython.display import display, clear_output
+
 from scipy.optimize import linprog
 from bs4 import BeautifulSoup
 from IPython.display import HTML
 from fractions import Fraction
+from urllib.parse import urlparse
 
 
 class Election:
@@ -248,6 +251,8 @@ class Election:
 
         self.graph_data = {'nodes': nodes, 'links': links}
 
+    
+
     def build_graph_html(self, width=960, height=500, linkDistance=200, linkColor='#121212',
                          labelColor='#aaa', charge=-300, theta=0.1, gravity=0.05,
                          saved=False):
@@ -255,56 +260,61 @@ class Election:
         Build html based on d3.js force layout template
         inspired from http://bl.ocks.org/jhb/5955887
         """
-        with open('./graph/graph_template.html', 'r') as f:
-            html = f.read()
 
+        import jinja2 as jj
+
+        # get template
+        env = jj.Environment(loader=jj.FileSystemLoader(['./graph']),
+                             variable_start_string='__$',
+                             variable_end_string='$__')
+        html_template = env.get_template('graph_template.html')
+
+        # build data to put in template
+        random_tag = str(int(np.random.random() * 10000))
         dic_data = {
-            '__json_data__': json.dumps(self.graph_data),
-            '__width__': width,
-            '__height__': height,
-            '__linkDistance__': linkDistance,
-            '__linkColor__': '"{}"'.format(linkColor),
-            '__labelColor__': '{}'.format(labelColor),
-            '__Charge__': charge,
-            '__Theta__': theta,
-            '__Gravity__': gravity,
+            'tag': random_tag,
+            'json_data': json.dumps(self.graph_data),
+            'width': width,
+            'height': height,
+            'linkDistance': linkDistance,
+            'linkColor': '"{}"'.format(linkColor),
+            'labelColor': '{}'.format(labelColor),
+            'Charge': charge,
+            'Theta': theta,
+            'Gravity': gravity
         }
 
-        for k, v in dic_data.items():
-            v2 = v if isinstance(v, str) else str(v)
-            html = html.replace(k, v2)
+        # render template
+        html_string = html_template.render(dic_data)
 
+        # save as standalone
         if saved:
             if not os.path.exists('saved'):
                 os.makedirs('saved')
             with open('saved/graph.html', 'w') as f:
-                f.write(html)
+                f.write(html_string)
 
-        soup = BeautifulSoup(html, 'html.parser')
+        # extract pieces from template
+        def get_lib_name(url):
+            return urlparse(url).path.split('.')[0][1:]
 
-        js = soup.find('body').find('script').contents[0]
-        css = soup.find('head').find('style').contents[0]
+        soup = BeautifulSoup(html_string, 'html.parser')
+        js_lib_url_1 = soup.find('head').find_all('script')[0].attrs['src']
+        css = soup.find('head').find('style')
+        div = soup.find('body').find_all('div')[0]
+        js = soup.find('body').find_all('script')[0].contents[0]
+        js_lib_name_1 = get_lib_name(js_lib_url_1)
+        js_lib = json.dumps([js_lib_url_1])
+        js_lib_name = ', '.join([js_lib_name_1])
 
-        JS_LIBS = json.dumps(['http://d3js.org/d3.v3.min.js'])
-
+        # build output from pieces
         html_output = """
-        <div id="graphdiv">
-        </div>
-
-        <style type="text/css">
-            %s
-        </style>
-
+        %s
+        %s
         <script type="text/javascript">
-        require(%s, function() {
-            %s
-        });
+        require(%s, function(%s) { %s });
         </script>
-
-        """ % (css, JS_LIBS, js)
-
-        html_output = html_output.replace(
-            'graphdiv', 'graphdiv' + str(int(np.random.random() * 10000)))
+        """ % (div, css, js_lib, js_lib_name, js)
 
         self.graph_html = html_output
 
@@ -312,4 +322,67 @@ class Election:
         """
         display graph in Jupyter notebook
         """
+        clear_output(wait=True)
         return HTML(self.graph_html)
+
+
+
+# def build_graph_html2(self, width=960, height=500, linkDistance=200, linkColor='#121212',
+#                          labelColor='#aaa', charge=-300, theta=0.1, gravity=0.05,
+#                          saved=False):
+#         """
+#         Build html based on d3.js force layout template
+#         inspired from http://bl.ocks.org/jhb/5955887
+#         """
+#         with open('./graph/graph_template.html', 'r') as f:
+#             html = f.read()
+
+#         dic_data = {
+#             '__json_data__': json.dumps(self.graph_data),
+#             '__width__': width,
+#             '__height__': height,
+#             '__linkDistance__': linkDistance,
+#             '__linkColor__': '"{}"'.format(linkColor),
+#             '__labelColor__': '{}'.format(labelColor),
+#             '__Charge__': charge,
+#             '__Theta__': theta,
+#             '__Gravity__': gravity,
+#         }
+
+#         for k, v in dic_data.items():
+#             v2 = v if isinstance(v, str) else str(v)
+#             html = html.replace(k, v2)
+
+#         if saved:
+#             if not os.path.exists('saved'):
+#                 os.makedirs('saved')
+#             with open('saved/graph.html', 'w') as f:
+#                 f.write(html)
+
+#         soup = BeautifulSoup(html, 'html.parser')
+
+#         js = soup.find('body').find('script').contents[0]
+#         css = soup.find('head').find('style').contents[0]
+
+#         JS_LIBS = json.dumps(['http://d3js.org/d3.v3.min.js'])
+
+#         html_output = """
+#         <div id="graphdiv">
+#         </div>
+
+#         <style type="text/css">
+#             %s
+#         </style>
+
+#         <script type="text/javascript">
+#         require(%s, function() {
+#             %s
+#         });
+#         </script>
+
+#         """ % (css, JS_LIBS, js)
+
+#         html_output = html_output.replace(
+#             'graphdiv', 'graphdiv' + str(int(np.random.random() * 10000)))
+
+#         self.graph_html = html_output
